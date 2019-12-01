@@ -175,7 +175,7 @@ func (in *DashboardsService) GetDashboard(params model.DashboardQuery, template 
 		return nil, err
 	}
 
-	filters := in.buildLabels(params.Namespace, params.LabelsFilters)
+	filters := buildLabels(params.Namespace, params.LabelsFilters)
 	aggLabels := append(params.AdditionalLabels, model.ConvertAggregations(dashboard.Spec)...)
 	if len(aggLabels) == 0 {
 		// Prevent null in json
@@ -280,7 +280,7 @@ func (in *DashboardsService) fetchMetricNames(namespace string, labelsFilters ma
 		return []string{}
 	}
 
-	labels := in.buildLabels(namespace, labelsFilters)
+	labels := buildLabels(namespace, labelsFilters)
 	metrics, err := promClient.GetMetricsForLabels([]string{labels})
 	if err != nil {
 		in.Logger.Errorf("runtimes discovery failed, cannot load metrics for labels: %s. Error was: %v", labels, err)
@@ -369,7 +369,7 @@ func addDashboardToRuntimes(dashboard *v1alpha1.MonitoringDashboard, runtimes []
 	return runtimes
 }
 
-func (in *DashboardsService) buildLabels(namespace string, labelsFilters map[string]string) string {
+func buildLabels(namespace string, labelsFilters map[string]string) string {
 	labels := fmt.Sprintf(`{namespace="%s"`, namespace)
 	for k, v := range labelsFilters {
 		labels += fmt.Sprintf(`,%s="%s"`, k, v)

@@ -1,6 +1,9 @@
 package mock
 
 import (
+	"time"
+
+	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kiali/k-charted/prometheus"
@@ -28,4 +31,9 @@ func (o *PromClientMock) FetchHistogramRange(metricName, labels, grouping string
 func (o *PromClientMock) GetMetricsForLabels(labels []string) ([]string, error) {
 	args := o.Called(labels)
 	return args.Get(0).([]string), args.Error(1)
+}
+
+func (o *PromClientMock) GetStandardDev(metricName, labels, timeRange string, t time.Time) (model.Vector, error) {
+	args := o.Called(metricName, labels, timeRange, t)
+	return args.Get(0).(model.Vector), args.Error(1)
 }

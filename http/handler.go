@@ -2,9 +2,12 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -12,6 +15,7 @@ import (
 	"github.com/kiali/k-charted/config"
 	"github.com/kiali/k-charted/log"
 	"github.com/kiali/k-charted/model"
+	"github.com/kiali/k-charted/prometheus"
 )
 
 // DashboardHandler is the API handler to fetch runtime metrics to be displayed.
@@ -70,6 +74,45 @@ func SearchDashboardsHandler(queryParams url.Values, pathParams map[string]strin
 	}
 
 	respondWithJSON(svc.Logger, w, http.StatusOK, runtimes)
+}
+
+func AnalyzerHandler(queryParams url.Values, pathParams map[string]string, w http.ResponseWriter, conf config.Config, logger log.LogAdapter) {
+	namespace := pathParams["namespace"]
+	service := pathParams["service"]
+	labels := fmt.Sprintf(`{destination_service_namespace="%s",destination_service="%s"}`, namespace, service)
+
+	var t time.Time
+	strTimestamp := queryParams.Get("timestamp")
+	if strTimestamp == "" {
+		respondWithError(logger, w, http.StatusBadRequest, "Missing timestamp")
+		return
+	}
+	if num, err := strconv.ParseInt(strTimestamp, 10, 64); err == nil {
+		t = time.Unix(num, 0)
+	} else {
+		// Bad request
+		respondWithError(logger, w, http.StatusBadRequest, "Cannot parse timestamp")
+		return
+	}
+
+	promClient, err := prometheus.NewClient(conf.Prometheus)
+	if err != nil {
+		respondWithError(logger, w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	results := business.FindStdDevIncreases(promClient, logger, labels, t)
+
+	// Search for more metrics, assume service == app
+	labels = fmt.Sprintf(`{namespace="%s",app="%s"}`, namespace, service)
+	res2 := business.FindStdDevIncreases(promClient, logger, labels, t)
+
+	// Merge all
+	for k, v := range res2 {
+		results[k] = v
+	}
+
+	respondWithJSON(logger, w, http.StatusOK, results)
 }
 
 func respondWithJSON(logger log.SafeAdapter, w http.ResponseWriter, code int, payload interface{}) {

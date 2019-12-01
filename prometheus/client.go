@@ -19,6 +19,7 @@ type ClientInterface interface {
 	FetchRange(metricName, labels, grouping, aggregator string, q *MetricsQuery) Metric
 	FetchRateRange(metricName, labels, grouping string, q *MetricsQuery) Metric
 	GetMetricsForLabels(labels []string) ([]string, error)
+	GetStandardDev(metricName, labels, timeRange string, t time.Time) (model.Vector, error)
 }
 
 // Client for Prometheus API.
@@ -125,11 +126,15 @@ func (in *Client) GetMetricsForLabels(labels []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var names []string
+	tmpMap := make(map[string]bool)
 	for _, labelSet := range results {
 		if name, ok := labelSet["__name__"]; ok {
-			names = append(names, string(name))
+			tmpMap[string(name)] = true
 		}
+	}
+	var names []string
+	for name, _ := range tmpMap {
+		names = append(names, name)
 	}
 	return names, nil
 }
@@ -137,4 +142,18 @@ func (in *Client) GetMetricsForLabels(labels []string) ([]string, error) {
 // roundSignificant will output promQL that performs rounding only if the resulting value is significant, that is, higher than the requested precision
 func roundSignificant(innerQuery string, precision float64) string {
 	return fmt.Sprintf("round(%s, %f) > %f or %s", innerQuery, precision, precision, innerQuery)
+}
+
+// GetStandardDev
+func (in *Client) GetStandardDev(metricName, labels, timeRange string, t time.Time) (model.Vector, error) {
+	query := fmt.Sprintf("avg(stddev_over_time(%s%s%s))", metricName, labels, timeRange)
+	result, err := in.api.Query(context.Background(), query, t)
+	if err != nil {
+		return nil, err
+	}
+	switch result.Type() {
+	case model.ValVector:
+		return result.(model.Vector), nil
+	}
+	return nil, fmt.Errorf("invalid query, vector expected: %s", query)
 }
