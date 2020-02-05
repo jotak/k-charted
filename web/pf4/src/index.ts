@@ -1,5 +1,6 @@
 import { Dashboard } from './components/Dashboard';
 import ChartWithLegend from './components/ChartWithLegend';
+import { CustomFlyout, CustomLabel } from './components/CustomFlyout';
 import { DashboardModel, ChartModel, AggregationModel, ExternalLink } from '../../common/types/Dashboards';
 import { LabelDisplayName, AllPromLabelsValues, PromLabel, SingleLabelValues } from '../../common/types/Labels';
 import { TimeSeries } from '../../common/types/Metrics';
@@ -35,5 +36,7 @@ export {
   makeLegend,
   VCLines,
   VCLine,
-  VCDataPoint
+  VCDataPoint,
+  CustomFlyout,
+  CustomLabel
 };

@@ -1,17 +1,27 @@
 import * as React from 'react';
-import { Flyout } from 'victory';
+import { Flyout, VictoryLabel } from 'victory';
 
 const squareSize = 10;
+const dy = 15;
+const canvasContext: any = document.createElement('canvas').getContext('2d');
+// TODO: safe way to get this programmatically?
+canvasContext.font = '14px overpass';
 
-export const CustomFlyout = (props: any) => {
-  const { width, center, datum } = props;
-  const left = center.x - width / 2;
-  const top = center.y - squareSize / 2;
-  const extraWidth = squareSize + 5;
+export const CustomLabel = (props: any & { ignoreColorForPattern?: string }) => {
+  const x = props.x - 16 - Math.max(...props.text.map(t => canvasContext.measureText(t).width)) / 2;
+  const startY = 3 + props.y - (props.text.length * dy) / 2;
   return (
     <>
-      <Flyout {...props} width={width + extraWidth} />
-      <rect width={squareSize} height={squareSize} x={left} y={top} style={{ fill: datum.color }} />
+      {props.activePoints.filter(pt => pt.color && (!props.ignoreColorForPattern || !(pt.childName && pt.childName.includes(props.ignoreColorForPattern))))
+        .map((pt, idx) => {
+          return <rect key={'rect-' + idx} width={squareSize} height={squareSize} x={x} y={startY + dy * idx} style={{ fill: pt.color }} />;
+        })
+      })}
+      <VictoryLabel {...props} />
     </>
   );
+};
+
+export const CustomFlyout = (props: any) => {
+  return <Flyout {...props} width={props.width + 15} style={{ ...props.style, stroke: 'none', fillOpacity: 0.6 }} />;
 };

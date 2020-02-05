@@ -2,10 +2,10 @@ import * as React from 'react';
 import { format as d3Format } from 'd3-format';
 import { ChartVoronoiContainer, ChartTooltip } from '@patternfly/react-charts';
 import { getFormatter } from '../../../common/utils/formatter';
-import { CustomFlyout } from './CustomFlyout';
+import { CustomFlyout, CustomLabel } from './CustomFlyout';
 
 export const createContainer = () => {
-  const tooltip = <ChartTooltip flyoutComponent={<CustomFlyout />} constrainToVisibleArea={true} />;
+  const tooltip = <ChartTooltip flyoutComponent={<CustomFlyout/>} labelComponent={<CustomLabel/>} constrainToVisibleArea={true} />;
   return (
     <ChartVoronoiContainer
       labels={obj => `${obj.datum.name}: ${getFormatter(d3Format, obj.datum.unit)(obj.datum.actualY || obj.datum.y)}`}
