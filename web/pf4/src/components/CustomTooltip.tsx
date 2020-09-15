@@ -55,7 +55,8 @@ type Props = ChartTooltipProps & {
   showTime?: boolean,
   activePoints?: VCDataPoint[],
   onOpen?: (items: VCDataPoint[]) => void,
-  onClose?: () => void
+  onClose?: () => void,
+  display?: boolean
 };
 
 type State = {
@@ -103,7 +104,7 @@ export class CustomTooltip extends React.Component<Props, State> {
   }
 
   render() {
-    return (
+    return this.props.display === false ? null : (
       <ChartTooltip
         {...this.props}
         text={this.state.texts}

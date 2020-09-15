@@ -31,6 +31,7 @@ type Props<T extends RichDataPoint, O extends LineInfo> = {
 type State = {
   width: number;
   hiddenSeries: Set<string>;
+  legendHovered: boolean;
 };
 
 type Padding = { top: number, left: number, right: number, bottom: number };
@@ -44,7 +45,7 @@ class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extends React
   constructor(props: Props<T, O>) {
     super(props);
     this.containerRef = React.createRef<HTMLDivElement>();
-    this.state = { width: 0, hiddenSeries: new Set([overlayName]) };
+    this.state = { width: 0, hiddenSeries: new Set([overlayName]), legendHovered: false };
   }
 
   componentDidMount() {
@@ -129,7 +130,7 @@ class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extends React
           width={this.state.width}
           padding={padding}
           events={events}
-          containerComponent={newBrushVoronoiContainer(this.onTooltipOpen, this.onTooltipClose, this.props.brushHandlers)}
+          containerComponent={newBrushVoronoiContainer(this.onTooltipOpen, this.onTooltipClose, !this.state.legendHovered, this.props.brushHandlers)}
           scale={{x: this.props.xAxis === 'series' ? 'linear' : 'time'}}
           // Hack: 1 pxl on Y domain padding to prevent harsh clipping (https://github.com/kiali/kiali/issues/2069)
           domainPadding={{y: 1, x: this.props.xAxis === 'series' ? 50 : undefined}}
@@ -194,6 +195,7 @@ class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extends React
             height={legend.height}
             width={this.state.width}
             itemsPerRow={legend.itemsPerRow}
+            symbolSpacer={10}
             style={{
               data: { cursor: 'pointer' },
               labels: { cursor: 'pointer' }
@@ -270,9 +272,14 @@ class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extends React
       idx: idx,
       serieID: serieID,
       onMouseOver: props => {
+        this.setState({ legendHovered: true });
         return {
           style: {...props.style,  strokeWidth: 4, fillOpacity: 0.5}
         };
+      },
+      onMouseOut: () => {
+        this.setState({ legendHovered: false });
+        return null;
       },
       onClick: () => {
         if (!this.state.hiddenSeries.delete(serieName)) {
